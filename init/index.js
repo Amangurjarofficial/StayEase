@@ -1,28 +1,38 @@
-const express = require("express");
+const dns = require("dns");
+
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 const mongoose = require("mongoose");
-const app = express("./data.js");
-const Listing = require("../models/listing.js"); 
+const Listing = require("../models/listing.js");
 const initData = require("./data.js");
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/stayEase";
+require("dotenv").config({ path: "../.env" });
+
+const MONGO_URL = process.env.ATLASDB_URL;
 
 main()
-.then( async () => {
+  .then(async () => {
     console.log("connected to DB");
     await initDB();
-})
-.catch((err) => {
+    await mongoose.connection.close();
+  })
+  .catch((err) => {
     console.log(err);
-});
+  });
 
-async function main(){
-    await mongoose.connect(MONGO_URL);
+async function main() {
+  await mongoose.connect(MONGO_URL);
 }
-
 
 async function initDB() {
   await Listing.deleteMany({});
-  initData.data = initData.data.map((obj) => ({...obj, owner: "6a72ae2e43df0bdc531b85b7"}));
-  await Listing.insertMany(initData.data); // or initData, depending on data.js
+
+  const listingsWithOwner = initData.data.map((obj) => ({
+    ...obj,
+    owner: new mongoose.Types.ObjectId("6a7449994a4a0bc13ef5caa4"),
+  }));
+
+  await Listing.insertMany(listingsWithOwner);
+
   console.log("Database initialized successfully!");
 }
